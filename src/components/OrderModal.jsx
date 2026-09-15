@@ -229,20 +229,27 @@ export default function OrderModal({ open, onClose }) {
             </button>
           </div>
           <div className="mt-4 flex flex-col md:flex-row gap-3">
-            <label className="flex-1 flex min-w-0 items-center gap-3 h-12 px-4 rounded-xl bg-surface border border-surface-container-high focus-within:border-secondary">
-              <span className="material-symbols-outlined text-[22px] text-secondary shrink-0">search</span>
+            <div className="relative flex-1 min-w-0">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[22px] text-secondary">
+                search
+              </span>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search dishes…"
-                className="w-full min-w-0 flex-1 bg-transparent outline-none font-body-md text-body-md text-on-surface placeholder:text-outline"
+                className="w-full h-12 rounded-xl bg-surface border border-surface-container-high focus:border-secondary outline-none font-body-md text-body-md text-on-surface placeholder:text-outline pl-11 pr-10"
               />
               {query && (
-                <button type="button" onClick={() => setQuery('')} className="shrink-0 text-outline hover:text-on-surface" aria-label="Clear search">
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface flex items-center justify-center"
+                  aria-label="Clear search"
+                >
                   <span className="material-symbols-outlined text-[18px]">cancel</span>
                 </button>
               )}
-            </label>
+            </div>
           </div>
           <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto snap-x px-5 pb-2 pt-1 -mx-5 sm:mx-0 sm:px-1">
             {MENU_TABS.map((t) => (
