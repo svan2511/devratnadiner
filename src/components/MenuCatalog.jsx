@@ -24,13 +24,21 @@ export default function MenuCatalog({ onOrder }) {
   const activeTabRef = useRef(null);
   const skipTabScroll = useRef(true);
 
-  // Keep the active category pill visible inside the slider
+  // Keep the active category pill visible inside the slider.
+  // NOTE: sirf slider ke andar scroll hota hai — page kabhi move nahi hota.
   useEffect(() => {
     if (skipTabScroll.current) {
       skipTabScroll.current = false;
       return;
     }
-    activeTabRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const container = tabsRef.current;
+    const el = activeTabRef.current;
+    if (container && el) {
+      container.scrollTo({
+        left: el.offsetLeft - container.clientWidth / 2 + el.clientWidth / 2,
+        behavior: 'smooth',
+      });
+    }
   }, [active]);
 
   const slideTabs = (dir) => {

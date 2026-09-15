@@ -2,41 +2,18 @@ import { IMAGES } from '../data/site';
 
 export default function Hero() {
   return (
-    <section id="home" className="relative w-full -mt-20 overflow-hidden bg-primary-container text-on-primary">
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-1000 scale-105"
-        style={{ backgroundImage: `url('${IMAGES.heroBg}')` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-primary-container via-primary-container/85 to-primary-container/50"></div>
-        <div className="absolute inset-0 bg-radial from-transparent via-primary-container/40 to-primary-container"></div>
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-gutter pt-36 pb-space-2xl min-h-[92vh] flex flex-col justify-between">
-        <div className="flex flex-wrap items-center gap-space-sm pt-4">
-          <span className="inline-flex items-center gap-space-xs px-3.5 py-1 rounded-full bg-secondary text-on-secondary font-label-md text-label-md tracking-widest uppercase shadow-md">
-            <span className="material-symbols-outlined text-[16px] text-tertiary-fixed">eco</span>
-            Welcome to Dev Ratna Diner
-          </span>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-highest/20 backdrop-blur-md text-tertiary-fixed font-caption text-caption">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Open Today • 8:30 AM to 11:00 PM</span>
-          </div>
+    <section id="home" className="relative w-full bg-primary-container text-on-primary">
+      <div className="max-w-7xl mx-auto px-gutter pt-6 sm:pt-8 pb-space-2xl flex flex-col gap-space-lg">
+        {/* Shop photo — poori original, top (signboard) se pinned, koi blur/overlay nahi */}
+        <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+          <img
+            src={IMAGES.heroFront}
+            alt="Dev Ratna Diner shop front in Clement Town"
+            loading="eager"
+            className="w-full h-[300px] sm:h-[420px] lg:h-[500px] object-cover object-top"
+          />
         </div>
-
-        <div className="my-auto py-space-xl max-w-3xl space-y-space-md">
-          <p className="font-subhead-lg text-subhead-lg text-tertiary-fixed-dim uppercase tracking-wider font-semibold">
-            Dev Ratna Diner • Dehradun
-          </p>
-          <h1 className="font-display-hero text-display-hero-mobile sm:text-display-hero font-bold tracking-tight text-surface-bright leading-none drop-shadow-sm">
-            Good Food. <br className="hidden sm:block" />
-            Good Mood. <br />
-            <span className="italic text-secondary-container">Good Moments.</span>
-          </h1>
-          <p className="font-body-lg text-body-lg text-surface-container-high/90 max-w-2xl leading-relaxed pt-space-xs">
-            Fresh flavours, comforting meals, and genuine Garhwali hospitality in the quiet pine-swept heart of Clement
-            Town. From sizzling tandoor skewers to slow-simmered valley classics.
-          </p>
-          <div className="flex flex-wrap items-center gap-space-md pt-space-md">
+        <div className="flex flex-wrap items-center gap-space-md">
             <a
               className="inline-flex items-center justify-center px-space-lg h-12 rounded-lg bg-secondary text-on-secondary font-label-lg text-label-lg shadow-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all hover:-translate-y-0.5 active:scale-95"
               href="#menu-catalog"
@@ -52,14 +29,13 @@ export default function Hero() {
               Get Directions
             </a>
             <a
-              className="inline-flex items-center gap-space-xs px-space-md h-12 rounded-lg text-surface-container-high hover:text-surface-bright font-label-md text-label-md transition-colors"
+              className="inline-flex items-center gap-space-xs px-space-md h-12 rounded-lg bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/60 font-label-md text-label-md transition-colors"
               href="tel:+918439356155"
             >
               <span className="material-symbols-outlined text-secondary-container">phone_in_talk</span>
               <span>+91 8439356155</span>
             </a>
           </div>
-        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-md pt-space-md border-t border-surface-container-highest/20 text-surface-container-high font-body-sm text-body-sm">
           <div className="flex items-center gap-space-sm">

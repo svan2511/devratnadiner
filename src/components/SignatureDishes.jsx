@@ -63,7 +63,7 @@ export default function SignatureDishes() {
                 <span className="font-caption text-caption text-secondary font-medium">{d.foot}</span>
                 <a
                   className="p-2 rounded-lg bg-surface-container hover:bg-secondary hover:text-on-secondary text-primary-container transition-colors"
-                  href="tel:+919897012345"
+                  href="tel:+918439356155"
                   title="Order via Phone"
                 >
                   <span className="material-symbols-outlined text-[18px]">shopping_bag</span>

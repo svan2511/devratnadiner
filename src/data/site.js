@@ -3,6 +3,9 @@ export const LOGO_URL = '/logo.png';
 export const IMAGES = {
   heroBg:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCw9Nx_Z-CizGIuPKUMF7BXe1qEMaca74DGg5rqGi9kULL-goKcdzJmJEQ-QGcnOuxky8EBnmSUnZhlFUxrzz98PytEwOKr-aZ8B_sCDKF9rC8qo68nR7bfNR8iZEJ0U3_1r5qUoNXey9BgBipROCHZPqsf4lpm2mQ5fbkHVgV3NTPKK5zXfuWG8H_1pKqJIKZh_seK-6M8yDc0aSF5xMDoPkvXe_xnmF8lyHQqfHTTurMzT12hO-wFyg',
+  // Nayi shop-front photo (public/front.png). Purani heroBg wali line backup hai —
+  // wapas chahiye to Hero.jsx me IMAGES.heroFront ki jagah IMAGES.heroBg kar dena.
+  heroFront: '/front.png',
   story:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuALdqvxN0ZEoePw9PDFIWeHxYT0-V8pbO0BiBtek5KVCaKHGEBvSnmqgLi_d5qD-bnXXNwpenaIS5LqDsun0dXV_E3tH2evZBCnqJQ4eHFAt0kbp6hQrH8WZHmZ99KGW3COnL5T0Lo1fMIm-ZqqDOrG2N-5l2P77EYgZTJuLjZOlRc_dmqL-zT9_p9OE82AsNBalZSHhWqM55P9Qxv2VI8DOdK_rJ4Q6UWXe4am0Zrm1ztLWIoEL8VV6w',
   dalMakhani:

@@ -229,12 +229,12 @@ export default function OrderModal({ open, onClose }) {
             </button>
           </div>
           <div className="mt-4 flex flex-col md:flex-row gap-3">
-            <label className="flex-1 flex min-w-0 items-center gap-2 h-11 px-4 rounded-xl bg-surface border border-surface-container-high focus-within:border-secondary">
-              <span className="material-symbols-outlined text-[20px] text-secondary shrink-0">search</span>
+            <label className="flex-1 flex min-w-0 items-center gap-3 h-12 px-4 rounded-xl bg-surface border border-surface-container-high focus-within:border-secondary">
+              <span className="material-symbols-outlined text-[22px] text-secondary shrink-0">search</span>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search dishes… e.g. Paneer, Momos, Thali"
+                placeholder="Search dishes…"
                 className="w-full min-w-0 flex-1 bg-transparent outline-none font-body-md text-body-md text-on-surface placeholder:text-outline"
               />
               {query && (
@@ -244,7 +244,7 @@ export default function OrderModal({ open, onClose }) {
               )}
             </label>
           </div>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto snap-x px-5 pb-2 pt-1 -mx-5 sm:mx-0 sm:px-1">
             {MENU_TABS.map((t) => (
               <button
                 key={t.key}
@@ -252,8 +252,8 @@ export default function OrderModal({ open, onClose }) {
                 onClick={() => setCategory(t.key)}
                 className={
                   t.key === category
-                    ? 'shrink-0 px-4 py-2 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md shadow-sm'
-                    : 'shrink-0 px-4 py-2 rounded-full bg-surface text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high border border-surface-container-high'
+                    ? 'shrink-0 snap-start whitespace-nowrap px-4 py-2 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md shadow-sm'
+                    : 'shrink-0 snap-start whitespace-nowrap px-4 py-2 rounded-full bg-surface text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high border border-surface-container-high'
                 }
               >
                 {t.label}
