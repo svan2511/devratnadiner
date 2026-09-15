@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS } from '../data/site';
 
 const ITEMS_PER_PAGE = 10;
@@ -20,6 +20,22 @@ export default function MenuCatalog({ onOrder }) {
   const [active, setActive] = useState('all');
   const [page, setPage] = useState(1);
   const listTopRef = useRef(null);
+  const tabsRef = useRef(null);
+  const activeTabRef = useRef(null);
+  const skipTabScroll = useRef(true);
+
+  // Keep the active category pill visible inside the slider
+  useEffect(() => {
+    if (skipTabScroll.current) {
+      skipTabScroll.current = false;
+      return;
+    }
+    activeTabRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [active]);
+
+  const slideTabs = (dir) => {
+    tabsRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
+  };
 
   const visible = active === 'all' ? MENU_ITEMS : MENU_ITEMS.filter((i) => i.category === active);
   const totalPages = Math.max(1, Math.ceil(visible.length / ITEMS_PER_PAGE));
@@ -56,24 +72,45 @@ export default function MenuCatalog({ onOrder }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3.5 max-w-5xl mx-auto">
-          {MENU_TABS.map((t) => {
-            const isActive = t.key === active;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => selectTab(t.key)}
-                className={
-                  isActive
-                    ? 'px-4 py-2 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md transition-colors shadow-sm'
-                    : 'px-4 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors'
-                }
-              >
-                {t.label}
-              </button>
-            );
-          })}
+        <div className="relative max-w-5xl mx-auto">
+          <button
+            type="button"
+            aria-label="Scroll categories left"
+            onClick={() => slideTabs(-1)}
+            className="hidden md:flex absolute -left-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-surface shadow-md border border-surface-container-high items-center justify-center text-on-surface hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+          </button>
+          <div ref={tabsRef} className="no-scrollbar flex items-center gap-2.5 overflow-x-auto px-1 py-1 snap-x snap-mandatory">
+            {MENU_TABS.map((t) => {
+              const isActive = t.key === active;
+              return (
+                <button
+                  key={t.key}
+                  ref={isActive ? activeTabRef : undefined}
+                  type="button"
+                  onClick={() => selectTab(t.key)}
+                  className={
+                    isActive
+                      ? 'shrink-0 snap-start whitespace-nowrap px-4 py-2 rounded-full bg-primary-container text-surface-bright font-label-md text-label-md transition-colors shadow-sm'
+                      : 'shrink-0 snap-start whitespace-nowrap px-4 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors'
+                  }
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            aria-label="Scroll categories right"
+            onClick={() => slideTabs(1)}
+            className="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-surface shadow-md border border-surface-container-high items-center justify-center text-on-surface hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+          </button>
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-surface-container-low to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-surface-container-low to-transparent" />
         </div>
 
         <p ref={listTopRef} className="text-center font-label-md text-label-md text-on-surface-variant scroll-mt-24">

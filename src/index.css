@@ -20,3 +20,13 @@ body {
 section[id] {
   scroll-margin-top: 5.5rem;
 }
+
+/* Hide scrollbars on horizontal sliders (swipe still works) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

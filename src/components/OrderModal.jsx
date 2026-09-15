@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS } from '../data/site';
 import {
   DELIVERY_RADIUS_METERS,
@@ -53,6 +53,12 @@ export default function OrderModal({ open, onClose }) {
   const [userPos, setUserPos] = useState(null); // { lat, lng }
   const [distanceM, setDistanceM] = useState(null);
   const [locAccuracy, setLocAccuracy] = useState(null); // meters, from browser
+  const bodyRef = useRef(null);
+  const cartRef = useRef(null);
+
+  const scrollToCart = () => {
+    cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const getPhoneDigits = (v) => String(v || '').replace(/\D/g, '').slice(0, 10);
   const phoneDigits = getPhoneDigits(phone);
@@ -223,16 +229,16 @@ export default function OrderModal({ open, onClose }) {
             </button>
           </div>
           <div className="mt-4 flex flex-col md:flex-row gap-3">
-            <label className="flex-1 flex items-center gap-2 h-11 px-4 rounded-xl bg-surface border border-surface-container-high focus-within:border-secondary">
-              <span className="material-symbols-outlined text-[20px] text-secondary">search</span>
+            <label className="flex-1 flex min-w-0 items-center gap-2 h-11 px-4 rounded-xl bg-surface border border-surface-container-high focus-within:border-secondary">
+              <span className="material-symbols-outlined text-[20px] text-secondary shrink-0">search</span>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search dishes… e.g. Paneer, Momos, Thali"
-                className="w-full bg-transparent outline-none font-body-md text-body-md text-on-surface placeholder:text-outline"
+                className="w-full min-w-0 flex-1 bg-transparent outline-none font-body-md text-body-md text-on-surface placeholder:text-outline"
               />
               {query && (
-                <button type="button" onClick={() => setQuery('')} className="text-outline hover:text-on-surface" aria-label="Clear search">
+                <button type="button" onClick={() => setQuery('')} className="shrink-0 text-outline hover:text-on-surface" aria-label="Clear search">
                   <span className="material-symbols-outlined text-[18px]">cancel</span>
                 </button>
               )}
@@ -260,7 +266,7 @@ export default function OrderModal({ open, onClose }) {
         </div>
 
         {/* Body — single scroll on mobile, two independent panes on desktop */}
-        <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_340px]">
+        <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_340px]">
           {/* Items */}
           <div className="p-4 sm:p-5 space-y-3 lg:min-h-0 lg:overflow-y-auto">
             {filtered.length === 0 && (
@@ -319,7 +325,7 @@ export default function OrderModal({ open, onClose }) {
           </div>
 
           {/* Cart */}
-          <aside className="border-t lg:border-t-0 lg:border-l border-surface-container bg-surface-container-low/60 p-4 sm:p-5 flex flex-col lg:min-h-0 lg:overflow-y-auto">
+          <aside ref={cartRef} className="border-t lg:border-t-0 lg:border-l border-surface-container bg-surface-container-low/60 p-4 sm:p-5 flex flex-col lg:min-h-0 lg:overflow-y-auto">
             <h3 className="font-subhead-lg text-subhead-lg font-bold text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-[20px]">shopping_bag</span>
               Your Order ({totalQty})
@@ -569,6 +575,30 @@ export default function OrderModal({ open, onClose }) {
               </button>
             )}
           </aside>
+
+          {/* Mobile-only floating cart bar — shows live total, jumps to order */}
+          {lines.length > 0 && (
+            <div className="lg:hidden sticky bottom-0 z-10 px-4 pb-4 pt-2 bg-gradient-to-t from-surface via-surface to-transparent">
+              <button
+                type="button"
+                onClick={scrollToCart}
+                className="w-full rounded-2xl bg-primary-container text-surface-bright pl-4 pr-2 py-2 flex items-center justify-between gap-3 shadow-[0_10px_30px_rgba(36,26,23,0.35)] active:scale-[0.99] transition"
+              >
+                <span className="min-w-0 text-left">
+                  <span className="block font-label-lg text-label-lg font-bold leading-tight">
+                    {totalQty} {totalQty === 1 ? 'item' : 'items'} • {formatINR(totalAmt)}
+                  </span>
+                  <span className="block font-caption text-caption text-surface-container-high/80">
+                    Added to your order
+                  </span>
+                </span>
+                <span className="shrink-0 inline-flex items-center gap-1 h-10 px-4 rounded-xl bg-secondary text-on-secondary font-label-md text-label-md font-bold">
+                  View Order
+                  <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
