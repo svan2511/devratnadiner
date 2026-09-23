@@ -3,12 +3,15 @@ import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS } from '../data/site';
 import {
   DELIVERY_RADIUS_METERS,
   MIN_ORDER_AMOUNT,
+  ORDER_HOURS_LABEL,
   ORDER_PHONE_DISPLAY,
   ORDER_WHATSAPP_NUMBER,
   buildWhatsAppOrderLink,
   cartKey,
   formatDistance,
   formatINR,
+  formatRadius,
+  getOrderingTimeStatus,
   getPriceOptions,
   haversineMeters,
   RESTAURANT_LAT,
@@ -53,6 +56,7 @@ export default function OrderModal({ open, onClose }) {
   const [userPos, setUserPos] = useState(null); // { lat, lng }
   const [distanceM, setDistanceM] = useState(null);
   const [locAccuracy, setLocAccuracy] = useState(null); // meters, from browser
+  const [now, setNow] = useState(() => new Date());
   const bodyRef = useRef(null);
   const cartRef = useRef(null);
 
@@ -78,9 +82,13 @@ export default function OrderModal({ open, onClose }) {
       if (e.key === 'Escape') onClose?.();
     };
     window.addEventListener('keydown', onKey);
+    // Ordering hours live re-check (har 30 sec me time update)
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 30000);
     return () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onKey);
+      clearInterval(timer);
     };
   }, [open, onClose]);
 
@@ -172,9 +180,13 @@ export default function OrderModal({ open, onClose }) {
   const minOrderMet = totalAmt >= MIN_ORDER_AMOUNT;
   const amountNeeded = MIN_ORDER_AMOUNT - totalAmt;
   const inRange = locStatus === 'ok' && distanceM != null && distanceM <= DELIVERY_RADIUS_METERS;
+  const radiusLabel = formatRadius(DELIVERY_RADIUS_METERS);
+  const timeStatus = getOrderingTimeStatus(now);
+  const isTimeOpen = timeStatus.isOpen;
 
   const placeOrder = () => {
     if (lines.length === 0) return;
+    if (!isTimeOpen) return;
     const err = getPhoneError(getPhoneDigits(phone));
     if (err) {
       setPhoneError(err);
@@ -191,20 +203,22 @@ export default function OrderModal({ open, onClose }) {
     window.open(url, '_blank', 'noopener');
   };
 
-  const canPlace = lines.length > 0 && isPhoneValid && minOrderMet && inRange;
+  const canPlace = lines.length > 0 && isPhoneValid && minOrderMet && inRange && isTimeOpen;
 
   const firstBlocker =
     lines.length === 0
       ? 'Add items to your order first'
-      : !isPhoneValid
-        ? 'Enter your 10-digit mobile number first'
-        : !minOrderMet
-          ? `Add ${formatINR(amountNeeded)} more (minimum ${formatINR(MIN_ORDER_AMOUNT)})`
-          : locStatus !== 'ok'
-            ? 'Verify your location first'
-            : !inRange
-              ? 'You are outside the 500m delivery range'
-              : undefined;
+      : !isTimeOpen
+        ? timeStatus.message
+        : !isPhoneValid
+          ? 'Enter your 10-digit mobile number first'
+          : !minOrderMet
+            ? `Add ${formatINR(amountNeeded)} more (minimum ${formatINR(MIN_ORDER_AMOUNT)})`
+            : locStatus !== 'ok'
+              ? 'Verify your location first'
+              : !inRange
+                ? `You are outside the ${radiusLabel} delivery range`
+                : undefined;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label="Request for Order">
@@ -443,6 +457,21 @@ export default function OrderModal({ open, onClose }) {
             {/* Requirements */}
             <div className="mt-3 rounded-xl bg-surface border border-surface-container-high px-3.5 py-3 space-y-2.5">
               <div className="flex items-center gap-2.5">
+                {isTimeOpen ? (
+                  <span className="material-symbols-outlined text-emerald-600 text-[20px]">check_circle</span>
+                ) : (
+                  <span className="material-symbols-outlined text-red-600 text-[20px]">schedule</span>
+                )}
+                <p
+                  className={`font-label-md text-label-md ${isTimeOpen ? 'text-on-surface-variant' : 'text-red-600 font-semibold'}`}
+                >
+                  {isTimeOpen
+                    ? `Ordering open • ${ORDER_HOURS_LABEL}`
+                    : `${timeStatus.message} • Hours ${ORDER_HOURS_LABEL}`}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5">
                 {isPhoneValid ? (
                   <span className="material-symbols-outlined text-emerald-600 text-[20px]">check_circle</span>
                 ) : (
@@ -490,12 +519,12 @@ export default function OrderModal({ open, onClose }) {
                   {locStatus === 'ok' && inRange
                     ? `Location verified (${formatDistance(distanceM)} away${locAccuracy != null ? ` • ±${locAccuracy}m` : ''})`
                     : locStatus === 'ok'
-                      ? `You are ${formatDistance(distanceM)} away — 500m limit${locAccuracy != null ? ` (±${locAccuracy}m)` : ''}`
+                      ? `You are ${formatDistance(distanceM)} away — ${radiusLabel} limit${locAccuracy != null ? ` (±${locAccuracy}m)` : ''}`
                       : locStatus === 'locating'
                         ? 'Detecting your location…'
                         : locStatus === 'error'
                           ? locError
-                          : 'Verify you are within 500m'}
+                          : `Verify you are within ${radiusLabel}`}
                 </p>
                 {locStatus === 'ok' && inRange && (
                   <button
@@ -535,7 +564,7 @@ export default function OrderModal({ open, onClose }) {
                   </a>
                 ) : (
                   <p className="mt-1.5 text-center font-caption text-caption text-on-surface-variant">
-                    Needed for online ordering (500m range)
+                    Needed for online ordering ({radiusLabel} range • {ORDER_HOURS_LABEL})
                   </p>
                 )}
               </div>

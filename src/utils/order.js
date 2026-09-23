@@ -7,7 +7,12 @@ export const ORDER_PHONE_DISPLAY = '+91 8439356155';
 export const RESTAURANT_LAT = 30.271015;
 export const RESTAURANT_LNG = 77.9945629;
 export const MIN_ORDER_AMOUNT = 500;
-export const DELIVERY_RADIUS_METERS = 500;
+export const DELIVERY_RADIUS_METERS = 1000;
+
+// Online ordering hours (local time). 9:30 AM se pehle aur 11:00 PM ke baad order band.
+export const ORDER_OPEN_MINUTES = 9 * 60 + 30; // 570 = 9:30 AM
+export const ORDER_CLOSE_MINUTES = 23 * 60; // 1380 = 11:00 PM (23:00 wali minute tak allowed)
+export const ORDER_HOURS_LABEL = '9:30 AM – 11:00 PM';
 
 /** Straight-line distance in meters between two lat/lng points. */
 export function haversineMeters(lat1, lng1, lat2, lng2) {
@@ -23,6 +28,42 @@ export function formatDistance(m) {
   if (m == null) return '';
   if (m < 1000) return `~${Math.round(m)}m`;
   return `~${(m / 1000).toFixed(1)} km`;
+}
+
+/** Radius ko display ke liye — 1000 => "1 km", 500 => "500m". */
+export function formatRadius(m) {
+  if (m == null) return '';
+  if (m >= 1000 && m % 1000 === 0) return `${m / 1000} km`;
+  if (m >= 1000) return `${(m / 1000).toFixed(1)} km`;
+  return `${m}m`;
+}
+
+/**
+ * Ordering time check (local time).
+ * Open: 9:30 AM (570) se 11:00 PM (1380) tak — 23:00 wali minute included.
+ * Returns { isOpen, state: 'open' | 'early' | 'late', message }
+ */
+export function getOrderingTimeStatus(now = new Date()) {
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  if (minutes < ORDER_OPEN_MINUTES) {
+    return {
+      isOpen: false,
+      state: 'early',
+      message: 'Ordering opens at 9:30 AM',
+    };
+  }
+  if (minutes > ORDER_CLOSE_MINUTES) {
+    return {
+      isOpen: false,
+      state: 'late',
+      message: 'Ordering closed for today — opens tomorrow at 9:30 AM',
+    };
+  }
+  return {
+    isOpen: true,
+    state: 'open',
+    message: `Ordering open • ${ORDER_HOURS_LABEL}`,
+  };
 }
 
 /**

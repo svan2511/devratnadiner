@@ -85,12 +85,9 @@ export const MENU_ITEMS = [
   { name: 'Paneer Burger', price: '₹70', category: 'breakfast', veg: true, desc: 'Crispy paneer patty burger.' },
 
   // ---- SNACKS ----
-  { name: 'Samosa', price: '₹20', category: 'snacks', veg: true, desc: 'Crisp punjabi samosa with imli chutney.' },
   { name: 'Bread Pakoda', price: '₹20', category: 'snacks', veg: true, desc: 'Stuffed bread fritters, chai-time favourite.' },
   { name: 'Paneer Pakoda (10 Pcs)', price: '₹100', category: 'snacks', veg: true, desc: 'Crisp batter-fried paneer bites.' },
   { name: 'Mix Pakoda (250 gm)', price: '₹80', category: 'snacks', veg: true, desc: 'Assorted monsoon fritters.' },
-  { name: 'Chole Samosa', price: '₹40', category: 'snacks', veg: true, desc: 'Samosa topped with spicy chole.' },
-  { name: 'Dahi Samosa', price: '₹50', category: 'snacks', veg: true, desc: 'Samosa chaat with curd & chutneys.' },
 
   // ---- INDIAN THALI ----
   { name: 'Veg Thali', price: '₹80', category: 'thali', veg: true, desc: 'Sabji + Dal + Roti + Salad + Rice.' },
@@ -107,7 +104,7 @@ export const MENU_ITEMS = [
   { name: 'Kadhai Paneer', price: '₹180 / 290', category: 'paneer', veg: true, desc: 'Half / Full. Wok-tossed with capsicum & kadhai masala.' },
   { name: 'Paneer Butter Masala', price: '₹180 / 300', category: 'paneer', veg: true, desc: 'Half / Full. Rich makhani gravy, best with naan.' },
   { name: 'Paneer Bhurji', price: '₹180 / 300', category: 'paneer', veg: true, desc: 'Half / Full. Scrambled paneer with onion-tomato masala.' },
-  { name: 'Shahi Paneer', price: '₹180 / 290', category: 'paneer', veg: true, desc: 'Half / Full. Royal cashew-tomato gravy.' },
+  { name: 'Paneer Do Pyaza', price: '₹210 / 320', category: 'paneer', veg: true, desc: 'Half / Full. Paneer tossed with double onions & masala.' },
 
   // ---- VEGETABLE ----
   { name: 'Mix Veg', price: '₹90 / 160', category: 'veg', veg: true, desc: 'Half / Full. Seasonal garden vegetables.' },
