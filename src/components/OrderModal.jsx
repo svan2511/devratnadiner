@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS } from '../data/site';
 import {
+  DELIVERY_CHARGE,
   DELIVERY_RADIUS_METERS,
   MIN_ORDER_AMOUNT,
   ORDER_HOURS_LABEL,
@@ -175,10 +176,12 @@ export default function OrderModal({ open, onClose }) {
 
   const lines = Object.entries(cart).map(([key, v]) => ({ key, ...v }));
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
-  const totalAmt = lines.reduce((s, l) => s + (l.mrp ? 0 : l.amount * l.qty), 0);
+  const subtotal = lines.reduce((s, l) => s + (l.mrp ? 0 : l.amount * l.qty), 0);
+  const deliveryFee = lines.length > 0 ? DELIVERY_CHARGE : 0;
+  const totalAmt = subtotal + deliveryFee;
   const hasMrp = lines.some((l) => l.mrp);
-  const minOrderMet = totalAmt >= MIN_ORDER_AMOUNT;
-  const amountNeeded = MIN_ORDER_AMOUNT - totalAmt;
+  const minOrderMet = subtotal >= MIN_ORDER_AMOUNT;
+  const amountNeeded = MIN_ORDER_AMOUNT - subtotal;
   const inRange = locStatus === 'ok' && distanceM != null && distanceM <= DELIVERY_RADIUS_METERS;
   const radiusLabel = formatRadius(DELIVERY_RADIUS_METERS);
   const timeStatus = getOrderingTimeStatus(now);
@@ -449,9 +452,19 @@ export default function OrderModal({ open, onClose }) {
               />
             </div>
 
-            <div className="mt-3 rounded-xl bg-primary-container text-surface-bright px-5 py-3.5 flex items-center justify-between gap-3">
-              <span className="font-label-md text-label-md opacity-90">Total {hasMrp ? '(MRP extra)' : ''}</span>
-              <span className="text-xl font-bold whitespace-nowrap">{formatINR(totalAmt)}</span>
+            <div className="mt-3 rounded-xl bg-primary-container text-surface-bright px-5 py-3.5 space-y-1">
+              <div className="flex items-center justify-between gap-3 font-label-md text-label-md opacity-90">
+                <span>Food Subtotal{hasMrp ? ' (MRP extra)' : ''}</span>
+                <span className="whitespace-nowrap">{formatINR(subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 font-label-md text-label-md opacity-90">
+                <span>Delivery Charge</span>
+                <span className="whitespace-nowrap">{formatINR(deliveryFee)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 pt-1 border-t border-white/20">
+                <span className="font-label-md text-label-md font-bold">Total Payable</span>
+                <span className="text-xl font-bold whitespace-nowrap">{formatINR(totalAmt)}</span>
+              </div>
             </div>
 
             {/* Requirements */}
@@ -491,17 +504,17 @@ export default function OrderModal({ open, onClose }) {
                   )}
                   <p className="font-label-md text-label-md text-on-surface-variant">
                     {lines.length === 0
-                      ? `Minimum online order ${formatINR(MIN_ORDER_AMOUNT)}`
+                      ? `Minimum food order ${formatINR(MIN_ORDER_AMOUNT)} + ${formatINR(DELIVERY_CHARGE)} delivery`
                       : minOrderMet
                         ? 'Minimum order complete'
-                        : `Add ${formatINR(amountNeeded)} more (min ${formatINR(MIN_ORDER_AMOUNT)})`}
+                        : `Add ${formatINR(amountNeeded)} more food (min ${formatINR(MIN_ORDER_AMOUNT)})`}
                   </p>
                 </div>
                 {lines.length > 0 && !minOrderMet && (
                   <div className="mt-2 h-1.5 rounded-full bg-surface-container-high overflow-hidden">
                     <div
                       className="h-full rounded-full bg-secondary transition-all"
-                      style={{ width: `${Math.min(100, (totalAmt / MIN_ORDER_AMOUNT) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (subtotal / MIN_ORDER_AMOUNT) * 100)}%` }}
                     />
                   </div>
                 )}

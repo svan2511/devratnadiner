@@ -8,6 +8,7 @@ export const RESTAURANT_LAT = 30.271015;
 export const RESTAURANT_LNG = 77.9945629;
 export const MIN_ORDER_AMOUNT = 500;
 export const DELIVERY_RADIUS_METERS = 1000;
+export const DELIVERY_CHARGE = 40;
 
 // Online ordering hours (local time). 9:30 AM se pehle aur 11:00 PM ke baad order band.
 export const ORDER_OPEN_MINUTES = 9 * 60 + 30; // 570 = 9:30 AM
@@ -102,7 +103,9 @@ export function cartKey(name, variant) {
 export function buildOrderMessage(lines, customer, meta) {
   const { name = '', phone = '', note = '' } = customer || {};
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
-  const totalAmt = lines.reduce((s, l) => s + (l.mrp ? 0 : l.amount * l.qty), 0);
+  const subtotal = lines.reduce((s, l) => s + (l.mrp ? 0 : l.amount * l.qty), 0);
+  const deliveryFee = lines.length > 0 ? DELIVERY_CHARGE : 0;
+  const totalAmt = subtotal + deliveryFee;
   const hasMrp = lines.some((l) => l.mrp);
 
   const now = new Date();
@@ -135,6 +138,8 @@ export function buildOrderMessage(lines, customer, meta) {
   });
   msg += `${DIV}\n`;
   msg += `📦 Total Items: ${totalQty}\n`;
+  msg += `🧾 Food Subtotal: ${formatINR(subtotal)}${hasMrp ? ' (+ MRP extra)' : ''}\n`;
+  msg += `🛵 Delivery Charge: ${formatINR(deliveryFee)}\n`;
   msg += `💰 *Total Payable: ${formatINR(totalAmt)}*${hasMrp ? ' (+ MRP extra)' : ''}\n`;
   msg += `${DIV}\n`;
   msg += `👤 *CUSTOMER DETAILS*\n`;
