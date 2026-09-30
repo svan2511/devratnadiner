@@ -1,5 +1,9 @@
 export const LOGO_URL = '/logo.png';
 
+// Android app (GitHub release APK) — website se direct download.
+export const APP_APK_URL = 'https://github.com/svan2511/devratnadiner/releases/download/V1.0.0/app.apk';
+export const APP_VERSION = 'V1.0.0';
+
 export const IMAGES = {
   heroBg:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCw9Nx_Z-CizGIuPKUMF7BXe1qEMaca74DGg5rqGi9kULL-goKcdzJmJEQ-QGcnOuxky8EBnmSUnZhlFUxrzz98PytEwOKr-aZ8B_sCDKF9rC8qo68nR7bfNR8iZEJ0U3_1r5qUoNXey9BgBipROCHZPqsf4lpm2mQ5fbkHVgV3NTPKK5zXfuWG8H_1pKqJIKZh_seK-6M8yDc0aSF5xMDoPkvXe_xnmF8lyHQqfHTTurMzT12hO-wFyg',
@@ -29,6 +33,7 @@ export const NAV_LINKS = [
   // { label: 'Special', href: '#todays-special' },
   // { label: 'Atmosphere', href: '#gallery' },
   { label: 'Reviews', href: '#reviews' },
+  { label: 'Get App', href: '#get-app' },
   { label: 'Contact Us', href: '#location-map' },
 ];
 
@@ -380,11 +385,11 @@ const CATEGORY_FALLBACK_IMAGE = {
   beverages: '/cold-coffee.jpg',
 };
 
-/** Zomato-style photo for a menu item — local PNG, category fallback, never breaks. */
+/** Zomato-style photo for a menu item — naam se local photo pehle (menu wali hi), phir item.img, phir category fallback. Kabhi nahi tootega. */
 export function getDishImage(item) {
   if (!item) return null;
-  if (item.img) return item.img;
   const byName = DISH_IMAGE_BY_NAME[item.name];
   if (byName !== undefined) return byName;
+  if (item.img) return item.img;
   return CATEGORY_FALLBACK_IMAGE[item.category] || null;
 }

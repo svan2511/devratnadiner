@@ -9,6 +9,7 @@ import TodaysSpecial from './components/TodaysSpecial';
 import Gallery from './components/Gallery';
 import Reviews from './components/Reviews';
 import Location from './components/Location';
+import AppDownload from './components/AppDownload';
 import FinalCta from './components/FinalCta';
 import Footer from './components/Footer';
 import MobileBar from './components/MobileBar';
@@ -39,6 +40,7 @@ function App() {
           <Gallery />
           <Reviews />
           <Location />
+          <AppDownload />
           <FinalCta />
         </div>
       </main>
