@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS } from '../data/site';
+import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS, getDishImage } from '../data/site';
 import {
   DELIVERY_CHARGE,
   DELIVERY_RADIUS_METERS,
@@ -18,6 +18,9 @@ import {
   RESTAURANT_LAT,
   RESTAURANT_LNG,
 } from '../utils/order';
+
+// Live backend (admin Settings wahi se aate hain). VITE_API_URL se override.
+const SHOP_API_BASE = (import.meta.env.VITE_API_URL || 'https://devratna-apis.onrender.com').replace(/\/$/, '');
 
 function QtyStepper({ qty, onInc, onDec }) {
   if (qty === 0) return null;
@@ -46,8 +49,7 @@ function QtyStepper({ qty, onInc, onDec }) {
 
 export default function OrderModal({ open, onClose }) {
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('all');
-  const [cart, setCart] = useState({}); // key -> { name, variant, amount, qty, mrp }
+  const [category, setCategory] = useState('all');  const [cart, setCart] = useState({}); // key -> { name, variant, amount, qty, mrp }
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
@@ -58,6 +60,12 @@ export default function OrderModal({ open, onClose }) {
   const [distanceM, setDistanceM] = useState(null);
   const [locAccuracy, setLocAccuracy] = useState(null); // meters, from browser
   const [now, setNow] = useState(() => new Date());
+  // Live shop rules — admin Settings se (/api/v1/shop-status). Fail silent = bundled fallback.
+  const [shopCfg, setShopCfg] = useState({
+    minOrder: MIN_ORDER_AMOUNT,
+    deliveryCharge: DELIVERY_CHARGE,
+    radiusM: DELIVERY_RADIUS_METERS,
+  });
   const bodyRef = useRef(null);
   const cartRef = useRef(null);
 
@@ -86,7 +94,22 @@ export default function OrderModal({ open, onClose }) {
     // Ordering hours live re-check (har 30 sec me time update)
     setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 30000);
+    // Live pricing + radius — admin Settings se turant. Fail = fallback constants.
+    let alive = true;
+    fetch(`${SHOP_API_BASE}/api/v1/shop-status`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const d = j?.data;
+        if (!alive || !d) return;
+        setShopCfg((prev) => ({
+          minOrder: Number.isFinite(d.min_order) && d.min_order >= 0 ? Math.round(d.min_order) : prev.minOrder,
+          deliveryCharge: Number.isFinite(d.delivery_charge) && d.delivery_charge >= 0 ? Math.round(d.delivery_charge) : prev.deliveryCharge,
+          radiusM: Number.isFinite(d.radius_m) && d.radius_m >= 100 ? Math.round(d.radius_m) : prev.radiusM,
+        }));
+      })
+      .catch(() => {});
     return () => {
+      alive = false;
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onKey);
       clearInterval(timer);
@@ -177,13 +200,13 @@ export default function OrderModal({ open, onClose }) {
   const lines = Object.entries(cart).map(([key, v]) => ({ key, ...v }));
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
   const subtotal = lines.reduce((s, l) => s + (l.mrp ? 0 : l.amount * l.qty), 0);
-  const deliveryFee = lines.length > 0 ? DELIVERY_CHARGE : 0;
+  const deliveryFee = lines.length > 0 ? shopCfg.deliveryCharge : 0;
   const totalAmt = subtotal + deliveryFee;
   const hasMrp = lines.some((l) => l.mrp);
-  const minOrderMet = subtotal >= MIN_ORDER_AMOUNT;
-  const amountNeeded = MIN_ORDER_AMOUNT - subtotal;
-  const inRange = locStatus === 'ok' && distanceM != null && distanceM <= DELIVERY_RADIUS_METERS;
-  const radiusLabel = formatRadius(DELIVERY_RADIUS_METERS);
+  const minOrderMet = subtotal >= shopCfg.minOrder;
+  const amountNeeded = shopCfg.minOrder - subtotal;
+  const inRange = locStatus === 'ok' && distanceM != null && distanceM <= shopCfg.radiusM;
+  const radiusLabel = formatRadius(shopCfg.radiusM);
   const timeStatus = getOrderingTimeStatus(now);
   const isTimeOpen = timeStatus.isOpen;
 
@@ -201,7 +224,9 @@ export default function OrderModal({ open, onClose }) {
     const url = buildWhatsAppOrderLink(
       lines,
       { name, phone: cleanPhone, note },
-      userPos ? { distanceM, userLat: userPos.lat, userLng: userPos.lng } : undefined,
+      userPos
+        ? { distanceM, userLat: userPos.lat, userLng: userPos.lng, deliveryCharge: shopCfg.deliveryCharge }
+        : { deliveryCharge: shopCfg.deliveryCharge },
     );
     window.open(url, '_blank', 'noopener');
   };
@@ -216,7 +241,7 @@ export default function OrderModal({ open, onClose }) {
         : !isPhoneValid
           ? 'Enter your 10-digit mobile number first'
           : !minOrderMet
-            ? `Add ${formatINR(amountNeeded)} more (minimum ${formatINR(MIN_ORDER_AMOUNT)})`
+            ? `Add ${formatINR(amountNeeded)} more (minimum ${formatINR(shopCfg.minOrder)})`
             : locStatus !== 'ok'
               ? 'Verify your location first'
               : !inRange
@@ -300,8 +325,13 @@ export default function OrderModal({ open, onClose }) {
             )}
             {filtered.map((item) => {
               const opts = getPriceOptions(item.price);
+              const img = getDishImage(item);
               return (
-                <div key={item.name} className="p-4 rounded-xl bg-surface-container-low border border-surface-container hover:border-secondary/40 transition-colors">
+                <div key={item.name} className="p-4 rounded-xl bg-surface-container-low border border-surface-container hover:border-secondary/40 transition-colors flex gap-3">
+                  {img && (
+                    <img src={img} alt={item.name} loading="lazy" className="w-20 h-20 rounded-xl object-cover shrink-0 shadow-sm" />
+                  )}
+                  <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -313,7 +343,7 @@ export default function OrderModal({ open, onClose }) {
                           </span>
                         )}
                       </div>
-                      {item.desc && <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{item.desc}</p>}
+                      {item.desc && <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant line-clamp-2">{item.desc}</p>}
                     </div>
                   </div>
                   <div className="mt-3 space-y-2">
@@ -341,6 +371,7 @@ export default function OrderModal({ open, onClose }) {
                         </div>
                       );
                     })}
+                  </div>
                   </div>
                 </div>
               );
@@ -504,17 +535,17 @@ export default function OrderModal({ open, onClose }) {
                   )}
                   <p className="font-label-md text-label-md text-on-surface-variant">
                     {lines.length === 0
-                      ? `Minimum food order ${formatINR(MIN_ORDER_AMOUNT)} + ${formatINR(DELIVERY_CHARGE)} delivery`
+                      ? `Minimum food order ${formatINR(shopCfg.minOrder)} + ${formatINR(shopCfg.deliveryCharge)} delivery`
                       : minOrderMet
                         ? 'Minimum order complete'
-                        : `Add ${formatINR(amountNeeded)} more food (min ${formatINR(MIN_ORDER_AMOUNT)})`}
+                        : `Add ${formatINR(amountNeeded)} more food (min ${formatINR(shopCfg.minOrder)})`}
                   </p>
                 </div>
                 {lines.length > 0 && !minOrderMet && (
                   <div className="mt-2 h-1.5 rounded-full bg-surface-container-high overflow-hidden">
                     <div
                       className="h-full rounded-full bg-secondary transition-all"
-                      style={{ width: `${Math.min(100, (subtotal / MIN_ORDER_AMOUNT) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (subtotal / shopCfg.minOrder) * 100)}%` }}
                     />
                   </div>
                 )}

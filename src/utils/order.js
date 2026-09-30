@@ -10,7 +10,7 @@ export const MIN_ORDER_AMOUNT = 500;
 export const DELIVERY_RADIUS_METERS = 1000;
 export const DELIVERY_CHARGE = 40;
 
-// Online ordering hours (local time). 9:30 AM se pehle aur 11:00 PM ke baad order band.
+// Online ordering hours (local time). No orders before 9:30 AM or after 11:00 PM.
 export const ORDER_OPEN_MINUTES = 9 * 60 + 30; // 570 = 9:30 AM
 export const ORDER_CLOSE_MINUTES = 23 * 60; // 1380 = 11:00 PM (23:00 wali minute tak allowed)
 export const ORDER_HOURS_LABEL = '9:30 AM – 11:00 PM';
@@ -31,7 +31,7 @@ export function formatDistance(m) {
   return `~${(m / 1000).toFixed(1)} km`;
 }
 
-/** Radius ko display ke liye — 1000 => "1 km", 500 => "500m". */
+/** Display helper for radius — 1000 => "1 km", 500 => "500m". */
 export function formatRadius(m) {
   if (m == null) return '';
   if (m >= 1000 && m % 1000 === 0) return `${m / 1000} km`;
@@ -41,7 +41,7 @@ export function formatRadius(m) {
 
 /**
  * Ordering time check (local time).
- * Open: 9:30 AM (570) se 11:00 PM (1380) tak — 23:00 wali minute included.
+ * Open from 9:30 AM (570) to 11:00 PM (1380) — the 23:00 minute is included.
  * Returns { isOpen, state: 'open' | 'early' | 'late', message }
  */
 export function getOrderingTimeStatus(now = new Date()) {
@@ -104,7 +104,8 @@ export function buildOrderMessage(lines, customer, meta) {
   const { name = '', phone = '', note = '' } = customer || {};
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
   const subtotal = lines.reduce((s, l) => s + (l.mrp ? 0 : l.amount * l.qty), 0);
-  const deliveryFee = lines.length > 0 ? DELIVERY_CHARGE : 0;
+  // Delivery charge live (admin Settings) — meta se aata hai, fallback static.
+  const deliveryFee = lines.length > 0 ? (meta?.deliveryCharge ?? DELIVERY_CHARGE) : 0;
   const totalAmt = subtotal + deliveryFee;
   const hasMrp = lines.some((l) => l.mrp);
 

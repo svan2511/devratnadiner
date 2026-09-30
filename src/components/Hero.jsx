@@ -4,7 +4,7 @@ export default function Hero() {
   return (
     <section id="home" className="relative w-full bg-primary-container text-on-primary">
       <div className="max-w-7xl mx-auto px-gutter pt-6 sm:pt-8 pb-space-2xl flex flex-col gap-space-lg">
-        {/* Shop photo — poori original, top (signboard) se pinned, koi blur/overlay nahi */}
+        {/* Shop photo — full original, pinned from the top (signboard), no blur/overlay */}
         <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/10">
           <img
             src={IMAGES.heroFront}

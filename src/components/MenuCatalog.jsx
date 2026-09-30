@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS } from '../data/site';
+import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS, getDishImage } from '../data/site';
+import DishModal from './DishModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -19,13 +20,14 @@ function getPageList(current, total) {
 export default function MenuCatalog({ onOrder }) {
   const [active, setActive] = useState('all');
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
   const listTopRef = useRef(null);
   const tabsRef = useRef(null);
   const activeTabRef = useRef(null);
   const skipTabScroll = useRef(true);
 
   // Keep the active category pill visible inside the slider.
-  // NOTE: sirf slider ke andar scroll hota hai — page kabhi move nahi hota.
+  // NOTE: only the slider scrolls internally — the page never moves.
   useEffect(() => {
     if (skipTabScroll.current) {
       skipTabScroll.current = false;
@@ -128,30 +130,60 @@ export default function MenuCatalog({ onOrder }) {
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 pt-space-md">
-          {pageItems.map((item) => (
-            <div
-              key={item.name}
-              className="p-space-md rounded-xl bg-surface hover:bg-surface-container transition-colors flex items-start justify-between gap-space-md"
-            >
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0"></span>
-                  <h4 className="font-subhead-lg text-subhead-lg font-bold text-on-surface">{item.name}</h4>
-                  {active === 'all' && CATEGORY_LABELS[item.category] && (
-                    <span className="font-caption text-caption text-secondary bg-secondary-fixed/50 px-2 py-0.5 rounded">
-                      {CATEGORY_LABELS[item.category]}
+          {pageItems.map((item) => {
+            const img = getDishImage(item);
+            return (
+              <button
+                key={item.name}
+                type="button"
+                onClick={() => setSelected(item)}
+                className="text-left p-space-md rounded-2xl bg-surface hover:bg-surface-container hover:shadow-lg transition-all flex items-start justify-between gap-4 cursor-pointer border border-transparent hover:border-surface-container-high"
+              >
+                <div className="space-y-1.5 min-w-0 flex-1 py-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="w-4 h-4 rounded border-[1.5px] border-emerald-700 flex items-center justify-center shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-600" />
                     </span>
+                    <h4 className="font-subhead-lg text-subhead-lg font-bold text-on-surface leading-snug">{item.name}</h4>
+                    {active === 'all' && CATEGORY_LABELS[item.category] && (
+                      <span className="font-caption text-caption text-secondary bg-secondary-fixed/50 px-2 py-0.5 rounded">
+                        {CATEGORY_LABELS[item.category]}
+                      </span>
+                    )}
+                  </div>
+                  <span className="block font-headline-sm text-headline-sm font-semibold text-secondary">
+                    {item.price}
+                  </span>
+                  {item.desc && (
+                    <p className="font-body-sm text-body-sm text-on-surface-variant leading-normal line-clamp-2">{item.desc}</p>
                   )}
+                  <span className="inline-block font-caption text-caption font-semibold text-secondary mt-1">
+                    View details →
+                  </span>
                 </div>
-                {item.desc && (
-                  <p className="font-body-sm text-body-sm text-on-surface-variant leading-normal">{item.desc}</p>
-                )}
-              </div>
-              <span className="font-headline-sm text-headline-sm font-semibold text-secondary whitespace-nowrap">
-                {item.price}
-              </span>
-            </div>
-          ))}
+                {/* Zomato-style big dish photo */}
+                <div className="relative shrink-0">
+                  {img ? (
+                    <img
+                      src={img}
+                      alt={item.name}
+                      loading="lazy"
+                      className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl object-cover shadow-md"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl bg-surface-container flex items-center justify-center">
+                      <span className="font-headline-lg text-headline-lg font-bold text-secondary/30">
+                        {item.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-xl bg-surface border border-secondary text-secondary font-label-md text-label-md font-bold shadow-md whitespace-nowrap">
+                    ADD +
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {totalPages > 1 && (
@@ -223,6 +255,15 @@ export default function MenuCatalog({ onOrder }) {
           </a>
         </div>
       </div>
+
+      <DishModal
+        dish={selected}
+        onClose={() => setSelected(null)}
+        onOrder={() => {
+          setSelected(null);
+          onOrder?.();
+        }}
+      />
     </section>
   );
 }

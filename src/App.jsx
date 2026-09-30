@@ -19,7 +19,7 @@ function App() {
   const openOrder = () => setOrderOpen(true);
   const closeOrder = () => setOrderOpen(false);
 
-  // Site load hote hi hamesha top (hero) dikhe — neeche scroll na ho
+  // Always show the top (hero) on site load — never restore scroll position
   useEffect(() => {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
@@ -33,7 +33,7 @@ function App() {
           <Hero />
           <About />
           <WhyUs />
-          <SignatureDishes />
+          <SignatureDishes onOrder={openOrder} />
           <MenuCatalog onOrder={openOrder} />
           <TodaysSpecial />
           <Gallery />
