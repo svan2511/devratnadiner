@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS, getDishImage } from '../data/site';
+import { useLiveShop, withLive } from '../hooks/useLiveShop';
 import {
-  DELIVERY_CHARGE,
-  DELIVERY_RADIUS_METERS,
-  MIN_ORDER_AMOUNT,
   ORDER_HOURS_LABEL,
   ORDER_PHONE_DISPLAY,
   ORDER_WHATSAPP_NUMBER,
@@ -19,8 +17,7 @@ import {
   RESTAURANT_LNG,
 } from '../utils/order';
 
-// Live backend (admin Settings wahi se aate hain). VITE_API_URL se override.
-const SHOP_API_BASE = (import.meta.env.VITE_API_URL || 'https://devratna-apis.onrender.com').replace(/\/$/, '');
+// Live backend base is shared via useLiveShop hook (VITE_API_URL override).
 
 function QtyStepper({ qty, onInc, onDec }) {
   if (qty === 0) return null;
@@ -60,12 +57,19 @@ export default function OrderModal({ open, onClose }) {
   const [distanceM, setDistanceM] = useState(null);
   const [locAccuracy, setLocAccuracy] = useState(null); // meters, from browser
   const [now, setNow] = useState(() => new Date());
-  // Live shop rules — admin Settings se (/api/v1/shop-status). Fail silent = bundled fallback.
-  const [shopCfg, setShopCfg] = useState({
-    minOrder: MIN_ORDER_AMOUNT,
-    deliveryCharge: DELIVERY_CHARGE,
-    radiusM: DELIVERY_RADIUS_METERS,
-  });
+  // Live shop rules + menu availability — admin Settings/dish switch se turant.
+  // Mobile app jaisa: fail silent = bundled fallback, 25s polling hook me.
+  const { liveByName, shop } = useLiveShop();
+  const shopCfg = {
+    minOrder: shop.minOrder,
+    deliveryCharge: shop.deliveryCharge,
+    radiusM: shop.radiusM,
+  };
+  const shopOpen = shop.shopOpen;
+  const liveItems = useMemo(
+    () => MENU_ITEMS.map((i) => withLive(i, liveByName)),
+    [liveByName],
+  );
   const bodyRef = useRef(null);
   const cartRef = useRef(null);
 
@@ -91,25 +95,11 @@ export default function OrderModal({ open, onClose }) {
       if (e.key === 'Escape') onClose?.();
     };
     window.addEventListener('keydown', onKey);
-    // Ordering hours live re-check (har 30 sec me time update)
+    // Ordering hours live re-check (har 30 sec me time update).
+    // Live pricing + availability + shop_open hook (useLiveShop) se aate hain.
     setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 30000);
-    // Live pricing + radius — admin Settings se turant. Fail = fallback constants.
-    let alive = true;
-    fetch(`${SHOP_API_BASE}/api/v1/shop-status`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        const d = j?.data;
-        if (!alive || !d) return;
-        setShopCfg((prev) => ({
-          minOrder: Number.isFinite(d.min_order) && d.min_order >= 0 ? Math.round(d.min_order) : prev.minOrder,
-          deliveryCharge: Number.isFinite(d.delivery_charge) && d.delivery_charge >= 0 ? Math.round(d.delivery_charge) : prev.deliveryCharge,
-          radiusM: Number.isFinite(d.radius_m) && d.radius_m >= 100 ? Math.round(d.radius_m) : prev.radiusM,
-        }));
-      })
-      .catch(() => {});
     return () => {
-      alive = false;
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onKey);
       clearInterval(timer);
@@ -118,7 +108,7 @@ export default function OrderModal({ open, onClose }) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return MENU_ITEMS.filter((item) => {
+    return liveItems.filter((item) => {
       if (category !== 'all' && item.category !== category) return false;
       if (!q) return true;
       const cat = (CATEGORY_LABELS[item.category] || '').toLowerCase();
@@ -128,11 +118,14 @@ export default function OrderModal({ open, onClose }) {
         cat.includes(q)
       );
     });
-  }, [query, category]);
+  }, [query, category, liveItems]);
 
   if (!open) return null;
 
   const inc = (item, opt) => {
+    // Admin ne dish OFF ki — mobile app jaisa, ADD block.
+    if (item.available === false) return;
+    if (shopOpen === false) return;
     const key = cartKey(item.name, opt.label);
     setCart((prev) => {
       const cur = prev[key]?.qty ?? 0;
@@ -198,6 +191,17 @@ export default function OrderModal({ open, onClose }) {
   };
 
   const lines = Object.entries(cart).map(([key, v]) => ({ key, ...v }));
+  // Admin ne beech me dish OFF ki — cart validation (mobile app jaisa).
+  const unavailableInCart = lines.filter(
+    (l) => liveByName[l.name]?.is_available === false,
+  );
+  const removeUnavailable = () => {
+    setCart((prev) => {
+      const next = { ...prev };
+      for (const l of unavailableInCart) delete next[l.key];
+      return next;
+    });
+  };
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
   const subtotal = lines.reduce((s, l) => s + (l.mrp ? 0 : l.amount * l.qty), 0);
   const deliveryFee = lines.length > 0 ? shopCfg.deliveryCharge : 0;
@@ -212,7 +216,9 @@ export default function OrderModal({ open, onClose }) {
 
   const placeOrder = () => {
     if (lines.length === 0) return;
-    if (!isTimeOpen) return;
+    if (!isTimeOpen || !shopOpen) return;
+    // Cart me koi dish ab OFF ho gayi to order block — mobile app jaisa.
+    if (unavailableInCart.length > 0) return;
     const err = getPhoneError(getPhoneDigits(phone));
     if (err) {
       setPhoneError(err);
@@ -231,13 +237,24 @@ export default function OrderModal({ open, onClose }) {
     window.open(url, '_blank', 'noopener');
   };
 
-  const canPlace = lines.length > 0 && isPhoneValid && minOrderMet && inRange && isTimeOpen;
+  const canPlace =
+    lines.length > 0 &&
+    isPhoneValid &&
+    minOrderMet &&
+    inRange &&
+    isTimeOpen &&
+    shopOpen &&
+    unavailableInCart.length === 0;
 
   const firstBlocker =
     lines.length === 0
       ? 'Add items to your order first'
-      : !isTimeOpen
-        ? timeStatus.message
+      : !shopOpen
+        ? 'Shop is closed now — ordering paused'
+        : unavailableInCart.length > 0
+          ? `"${unavailableInCart[0].name}" ab available nahi hai — cart se hatao`
+          : !isTimeOpen
+            ? timeStatus.message
         : !isPhoneValid
           ? 'Enter your 10-digit mobile number first'
           : !minOrderMet
@@ -310,8 +327,27 @@ export default function OrderModal({ open, onClose }) {
             ))}
           </div>
           <p className="mt-2 font-caption text-caption text-on-surface-variant">
-            {filtered.length} items found{query ? ` for “${query}”` : ''} • {MENU_ITEMS.length} items in total menu
+            {filtered.length} items found{query ? ` for “${query}”` : ''} • {liveItems.length} items in total menu
           </p>
+          {!shopOpen && (
+            <p className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 font-label-md text-label-md font-bold text-red-700">
+              Shop is closed now — ordering paused. Admin ke open karte hi order hoga.
+            </p>
+          )}
+          {unavailableInCart.length > 0 && (
+            <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+              <p className="font-label-md text-label-md font-bold text-red-700">
+                "{unavailableInCart[0].name}" ab available nahi hai.
+              </p>
+              <button
+                type="button"
+                onClick={removeUnavailable}
+                className="mt-1 font-label-md text-label-md font-bold text-secondary underline"
+              >
+                Cart se hatao
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Body — single scroll on mobile, two independent panes on desktop */}
@@ -326,10 +362,11 @@ export default function OrderModal({ open, onClose }) {
             {filtered.map((item) => {
               const opts = getPriceOptions(item.price);
               const img = getDishImage(item);
+              const unavailable = item.available === false;
               return (
                 <div key={item.name} className="p-4 rounded-xl bg-surface-container-low border border-surface-container hover:border-secondary/40 transition-colors flex gap-3">
                   {img && (
-                    <img src={img} alt={item.name} loading="lazy" className="w-20 h-20 rounded-xl object-cover shrink-0 shadow-sm" />
+                    <img src={img} alt={item.name} loading="lazy" className={`w-20 h-20 rounded-xl object-cover shrink-0 shadow-sm${unavailable ? ' opacity-60 grayscale' : ''}`} />
                   )}
                   <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
@@ -342,12 +379,22 @@ export default function OrderModal({ open, onClose }) {
                             {CATEGORY_LABELS[item.category]}
                           </span>
                         )}
+                        {unavailable && (
+                          <span className="font-caption text-caption font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded">
+                            Not Available now
+                          </span>
+                        )}
                       </div>
                       {item.desc && <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant line-clamp-2">{item.desc}</p>}
                     </div>
                   </div>
                   <div className="mt-3 space-y-2">
-                    {opts.map((opt) => {
+                    {unavailable ? (
+                      <p className="font-caption text-caption font-bold text-red-700">
+                        Aaj available nahi hai — kal try karein.
+                      </p>
+                    ) : (
+                    opts.map((opt) => {
                       const key = cartKey(item.name, opt.label);
                       const qty = cart[key]?.qty ?? 0;
                       return (
@@ -370,7 +417,7 @@ export default function OrderModal({ open, onClose }) {
                           )}
                         </div>
                       );
-                    })}
+                    }))}
                   </div>
                   </div>
                 </div>
@@ -500,6 +547,18 @@ export default function OrderModal({ open, onClose }) {
 
             {/* Requirements */}
             <div className="mt-3 rounded-xl bg-surface border border-surface-container-high px-3.5 py-3 space-y-2.5">
+              <div className="flex items-center gap-2.5">
+                {shopOpen ? (
+                  <span className="material-symbols-outlined text-emerald-600 text-[20px]">storefront</span>
+                ) : (
+                  <span className="material-symbols-outlined text-red-600 text-[20px]">storefront</span>
+                )}
+                <p
+                  className={`font-label-md text-label-md ${shopOpen ? 'text-on-surface-variant' : 'text-red-600 font-semibold'}`}
+                >
+                  {shopOpen ? 'Shop open — orders accepted' : 'Shop is closed now — ordering paused'}
+                </p>
+              </div>
               <div className="flex items-center gap-2.5">
                 {isTimeOpen ? (
                   <span className="material-symbols-outlined text-emerald-600 text-[20px]">check_circle</span>

@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { CATEGORY_LABELS, getDishImage } from '../data/site';
+import { useLiveShop } from '../hooks/useLiveShop';
 
 export default function DishModal({ dish, onClose, onOrder }) {
+  const { liveByName, shop } = useLiveShop();
   useEffect(() => {
     if (!dish) return;
     document.body.style.overflow = 'hidden';
@@ -16,6 +18,13 @@ export default function DishModal({ dish, onClose, onOrder }) {
   }, [dish, onClose]);
 
   if (!dish) return null;
+
+  // Admin live state — naam se match (mobile app jaisa).
+  const live = dish?.name ? liveByName[dish.name] : null;
+  const unavailable = live ? live.is_available === false : dish.available === false;
+  const livePrice = live?.price_label || dish.price;
+  const shopClosed = shop.shopOpen === false;
+  const orderBlocked = unavailable || shopClosed;
 
   const img = getDishImage(dish);
   const category = CATEGORY_LABELS[dish.category] || dish.tag || dish.badge || 'Dev Ratna Special';
@@ -45,8 +54,13 @@ export default function DishModal({ dish, onClose, onOrder }) {
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
           <span className="absolute bottom-3 left-4 px-3 py-1 rounded-full bg-primary-container/90 text-surface-bright font-label-md text-label-md backdrop-blur-sm">
-            {dish.price}
+            {livePrice}
           </span>
+          {unavailable && (
+            <span className="absolute bottom-3 right-4 px-3 py-1 rounded-full bg-red-600 text-white font-label-md text-label-md font-bold backdrop-blur-sm">
+              Not Available now
+            </span>
+          )}
           {dish.badge && (
             <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full ${dish.badgeStyle || 'bg-secondary'} text-white font-caption text-caption shadow-sm`}>
               {dish.badge}
@@ -84,11 +98,23 @@ export default function DishModal({ dish, onClose, onOrder }) {
           <div className="pt-2 flex flex-col sm:flex-row gap-3">
             <button
               type="button"
-              onClick={() => onOrder?.(dish)}
-              className="flex-1 inline-flex items-center justify-center px-space-lg h-12 rounded-xl bg-secondary text-on-secondary font-label-lg text-label-lg shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-all"
+              onClick={() => !orderBlocked && onOrder?.(dish)}
+              disabled={orderBlocked}
+              title={
+                unavailable
+                  ? 'Ye dish aaj available nahi hai'
+                  : shopClosed
+                    ? 'Shop is closed now — ordering paused'
+                    : undefined
+              }
+              className={`flex-1 inline-flex items-center justify-center px-space-lg h-12 rounded-xl font-label-lg text-label-lg shadow-md transition-all ${
+                orderBlocked
+                  ? 'bg-surface-container-high text-on-surface-variant cursor-not-allowed'
+                  : 'bg-secondary text-on-secondary hover:bg-secondary-container hover:text-on-secondary-container'
+              }`}
             >
               <span className="material-symbols-outlined mr-2 text-[20px]">shopping_bag</span>
-              Order this dish
+              {unavailable ? 'Not Available now' : shopClosed ? 'Shop Closed' : 'Order this dish'}
             </button>
             <a
               href="tel:+918439356155"

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORY_LABELS, MENU_ITEMS, MENU_TABS, getDishImage } from '../data/site';
+import { useLiveShop, withLive } from '../hooks/useLiveShop';
 import DishModal from './DishModal';
 
 const ITEMS_PER_PAGE = 10;
@@ -25,6 +26,12 @@ export default function MenuCatalog({ onOrder }) {
   const tabsRef = useRef(null);
   const activeTabRef = useRef(null);
   const skipTabScroll = useRef(true);
+  // Live menu — admin dish OFF / rate change turant reflect (mobile app jaisa).
+  const { liveByName } = useLiveShop();
+  const liveItems = useMemo(
+    () => MENU_ITEMS.map((i) => withLive(i, liveByName)),
+    [liveByName],
+  );
 
   // Keep the active category pill visible inside the slider.
   // NOTE: only the slider scrolls internally — the page never moves.
@@ -47,7 +54,7 @@ export default function MenuCatalog({ onOrder }) {
     tabsRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
   };
 
-  const visible = active === 'all' ? MENU_ITEMS : MENU_ITEMS.filter((i) => i.category === active);
+  const visible = active === 'all' ? liveItems : liveItems.filter((i) => i.category === active);
   const totalPages = Math.max(1, Math.ceil(visible.length / ITEMS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * ITEMS_PER_PAGE;
@@ -132,6 +139,7 @@ export default function MenuCatalog({ onOrder }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 pt-space-md">
           {pageItems.map((item) => {
             const img = getDishImage(item);
+            const unavailable = item.available === false;
             return (
               <button
                 key={item.name}
@@ -148,6 +156,11 @@ export default function MenuCatalog({ onOrder }) {
                     {active === 'all' && CATEGORY_LABELS[item.category] && (
                       <span className="font-caption text-caption text-secondary bg-secondary-fixed/50 px-2 py-0.5 rounded">
                         {CATEGORY_LABELS[item.category]}
+                      </span>
+                    )}
+                    {unavailable && (
+                      <span className="font-caption text-caption font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded">
+                        Not Available now
                       </span>
                     )}
                   </div>
@@ -168,7 +181,7 @@ export default function MenuCatalog({ onOrder }) {
                       src={img}
                       alt={item.name}
                       loading="lazy"
-                      className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl object-cover shadow-md"
+                      className={`w-32 h-32 sm:w-40 sm:h-40 rounded-2xl object-cover shadow-md${unavailable ? ' opacity-60 grayscale' : ''}`}
                     />
                   ) : (
                     <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl bg-surface-container flex items-center justify-center">
@@ -177,9 +190,15 @@ export default function MenuCatalog({ onOrder }) {
                       </span>
                     </div>
                   )}
-                  <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-xl bg-surface border border-secondary text-secondary font-label-md text-label-md font-bold shadow-md whitespace-nowrap">
-                    ADD +
-                  </span>
+                  {unavailable ? (
+                    <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-xl bg-surface-container-high border border-outline-variant text-on-surface-variant font-label-md text-label-md font-bold shadow-md whitespace-nowrap">
+                      Not Available
+                    </span>
+                  ) : (
+                    <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-xl bg-surface border border-secondary text-secondary font-label-md text-label-md font-bold shadow-md whitespace-nowrap">
+                      ADD +
+                    </span>
+                  )}
                 </div>
               </button>
             );

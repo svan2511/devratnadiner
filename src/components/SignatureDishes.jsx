@@ -1,9 +1,24 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SIGNATURE_DISHES, getDishImage } from '../data/site';
+import { useLiveShop, withLive } from '../hooks/useLiveShop';
 import DishModal from './DishModal';
 
 export default function SignatureDishes({ onOrder }) {
   const [selected, setSelected] = useState(null);
+  const { liveByName } = useLiveShop();
+  const liveDishes = useMemo(
+    () =>
+      SIGNATURE_DISHES.map((d) => ({
+        ...withLive({ ...d, price: d.price, desc: d.desc }, liveByName),
+        img: d.img,
+        badge: d.badge,
+        badgeStyle: d.badgeStyle,
+        tag: d.tag,
+        foot: d.foot,
+        alt: d.alt,
+      })),
+    [liveByName],
+  );
 
   return (
     <section id="signature-dishes" className="w-full py-space-2xl bg-surface text-on-surface">
@@ -32,8 +47,9 @@ export default function SignatureDishes({ onOrder }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {SIGNATURE_DISHES.map((d) => {
+          {liveDishes.map((d) => {
             const img = getDishImage(d) || d.img;
+            const unavailable = d.available === false;
             return (
               <button
                 key={d.name}
@@ -47,7 +63,7 @@ export default function SignatureDishes({ onOrder }) {
                     <img
                       alt={d.alt}
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500${unavailable ? ' opacity-60 grayscale' : ''}`}
                       src={img}
                     />
                     <span
@@ -58,6 +74,11 @@ export default function SignatureDishes({ onOrder }) {
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-primary-container/90 text-surface-bright font-label-md text-label-md backdrop-blur-sm">
                       {d.price}
                     </span>
+                    {unavailable && (
+                      <span className="absolute top-12 left-3 px-2.5 py-1 rounded-full bg-red-600 text-white font-caption text-caption font-bold shadow-sm">
+                        Not Available now
+                      </span>
+                    )}
                     <span className="absolute bottom-3 right-3 px-4 py-1.5 rounded-xl bg-surface text-secondary font-label-md text-label-md font-bold shadow-lg">
                       View +
                     </span>
