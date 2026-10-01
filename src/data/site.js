@@ -275,7 +275,9 @@ export const REVIEWS = [
   },
 ];
 
-// ---- Zomato-style dish photos (local /public PNGs copied from zomt/) ----
+// ---- Zomato-style dish photos (local /public JPGs converted from zomt/) ----
+// NOTE: scripts/check-images.js build se pehle verify karta hai —
+// har naam sahi file pe point kare, koi missing/wrong mapping na ho.
 const DISH_IMAGE_BY_NAME = {
   'Aloo Paratha': '/aallo-paratha.jpg',
   'Aloo Pyaj Paratha': '/aallo-pyaz.jpg',
@@ -290,7 +292,7 @@ const DISH_IMAGE_BY_NAME = {
   'Bread Pakoda': '/bread-pakoda.jpg',
   'Paneer Pakoda (8 Pcs)': '/paneer-pakoda.jpg',
   'Mix Pakoda (250 gm)': '/mix-pakoda.jpg',
-  'Bread Cutlet (2 Pcs)': '/bread-pakoda.jpg',
+  'Bread Cutlet (2 Pcs)': '/bread-cutlet.jpg',
   'Veg Thali': '/veg-thali.jpg',
   'Special Thali': '/special-veg-thali.jpg',
   'Rajma Chawal': '/rajma-chawal.jpg',
@@ -349,7 +351,7 @@ const DISH_IMAGE_BY_NAME = {
   'Paneer Maggie': '/panner-maggie.jpg',
   'Cheese Maggie': '/cheez-maggie.jpg',
   'Tea': '/tea.jpg',
-  'Masala Tea': '/cold-coffee.jpg',
+  'Masala Tea': '/tea.jpg',
   'Lemon Tea': '/lemon-tea.jpg',
   'Black Tea': '/black-tea.jpg',
   'Green Tea': '/green-tea.jpg',
@@ -393,3 +395,6 @@ export function getDishImage(item) {
   if (item.img) return item.img;
   return CATEGORY_FALLBACK_IMAGE[item.category] || null;
 }
+
+// Build-time guard (scripts/check-images.js) ke liye exports.
+export { DISH_IMAGE_BY_NAME, CATEGORY_FALLBACK_IMAGE };
