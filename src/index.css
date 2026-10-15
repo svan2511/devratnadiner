@@ -30,3 +30,23 @@ section[id] {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Coming Soon — attention shake (disabled button) */
+@keyframes dr-shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-4px) rotate(-1deg); }
+  40% { transform: translateX(4px) rotate(1deg); }
+  60% { transform: translateX(-3px) rotate(-0.5deg); }
+  80% { transform: translateX(3px) rotate(0.5deg); }
+}
+
+.animate-shake {
+  animation: dr-shake 1.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake {
+    animation: none;
+  }
+}

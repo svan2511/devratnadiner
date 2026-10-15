@@ -1,4 +1,4 @@
-import { APP_APK_URL, APP_VERSION, LOGO_URL } from '../data/site';
+import { APP_VERSION, LOGO_URL } from '../data/site';
 
 const PERKS = [
   { icon: 'my_location', title: 'GPS delivery', text: 'Live location pe exact ghar tak khana' },
@@ -51,13 +51,16 @@ export default function AppDownload() {
               </ul>
 
               <div className="flex flex-wrap items-center gap-space-sm pt-space-sm">
-                <a
-                  href={APP_APK_URL}
-                  className="inline-flex items-center justify-center gap-2 px-space-xl h-14 rounded-2xl bg-[#25D366] text-white font-label-lg text-label-lg font-bold shadow-[0_10px_30px_rgba(37,211,102,0.4)] hover:brightness-105 hover:-translate-y-0.5 active:scale-[0.98] transition-all"
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  title="App coming soon — payment gateway integration pending"
+                  className="inline-flex items-center justify-center gap-2 px-space-xl h-14 rounded-2xl bg-[#25D366] text-white font-label-lg text-label-lg font-bold shadow-[0_10px_30px_rgba(37,211,102,0.4)] cursor-not-allowed animate-shake"
                 >
                   <span className="material-symbols-outlined text-[22px]">android</span>
-                  Download for Android
-                </a>
+                  Coming Soon
+                </button>
                 <span className="font-caption text-caption text-surface-container-high/70">
                   {APP_VERSION} • Free • ~15 MB
                 </span>

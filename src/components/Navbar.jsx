@@ -4,6 +4,18 @@ import { LOGO_URL, NAV_LINKS } from '../data/site';
 export default function Navbar({ onOrder }) {
   const [open, setOpen] = useState(false);
 
+  const handleNavClick = (e, href) => {
+    if (!href.startsWith('#')) return;
+    const el = document.querySelector(href);
+    if (!el) return;
+    e.preventDefault();
+    // Get App pe button dikhe — section top se thoda aur neeche le jao
+    const extra = href === '#get-app' ? 160 : 0;
+    const y = el.getBoundingClientRect().top + window.scrollY - 88 + extra;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+    setOpen(false);
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md shadow-[0_1px_8px_rgba(36,26,23,0.06)] transition-all">
       <div className="h-20 max-w-7xl mx-auto px-gutter flex items-center justify-between gap-space-md">
@@ -20,6 +32,7 @@ export default function Navbar({ onOrder }) {
             <a
               key={l.href}
               href={l.href}
+              onClick={(e) => handleNavClick(e, l.href)}
               className={
                 i === 0
                   ? 'transition-colors text-secondary font-semibold'
@@ -67,7 +80,7 @@ export default function Navbar({ onOrder }) {
             <a
               key={l.href}
               href={l.href}
-              onClick={() => setOpen(false)}
+              onClick={(e) => handleNavClick(e, l.href)}
               className="font-label-lg text-label-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container px-space-md py-space-sm rounded-lg transition-colors"
             >
               {l.label}
