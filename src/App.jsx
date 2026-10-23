@@ -14,8 +14,9 @@ import FinalCta from './components/FinalCta';
 import Footer from './components/Footer';
 import MobileBar from './components/MobileBar';
 import OrderModal from './components/OrderModal';
+import NotFound from './components/NotFound';
 
-function App() {
+function HomePage() {
   const [orderOpen, setOrderOpen] = useState(false);
   const openOrder = () => setOrderOpen(true);
   const closeOrder = () => setOrderOpen(false);
@@ -49,6 +50,15 @@ function App() {
       <OrderModal open={orderOpen} onClose={closeOrder} />
     </div>
   );
+}
+
+function App() {
+  if (typeof window === 'undefined') return null;
+
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  const isHome = path === '/' || path === '/index.html';
+
+  return isHome ? <HomePage /> : <NotFound />;
 }
 
 export default App;
