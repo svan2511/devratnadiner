@@ -21,9 +21,21 @@ function HomePage() {
   const openOrder = () => setOrderOpen(true);
   const closeOrder = () => setOrderOpen(false);
 
-  // Always show the top (hero) on site load — never restore scroll position
+  // Hash (e.g. /#menu-catalog) ko respect karo, warna hero se top pe le jao.
   useEffect(() => {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+    const hash = window.location.hash;
+    if (hash.length > 1) {
+      const id = decodeURIComponent(hash.slice(1));
+      const raf = requestAnimationFrame(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ block: 'start' });
+        else window.scrollTo(0, 0);
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+
     window.scrollTo(0, 0);
   }, []);
 
